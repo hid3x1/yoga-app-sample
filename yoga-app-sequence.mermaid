@@ -3,38 +3,72 @@ sequenceDiagram
     actor ユーザー
     participant UI as ユーザーインターフェース
     participant Camera as カメラモジュール
+    participant DeviceMonitor as デバイスモニター
     participant PoseDetector as 姿勢検出エンジン
     participant PoseAnalyzer as 姿勢分析エンジン
     participant LocalDB as ローカルDB
     participant API as バックエンドAPI
     
-    %% MVPフェーズ1 - 初回起動・キャリブレーション（追加）
+    %% MVPフェーズ1 - 初回起動・キャリブレーション（改善版）
     ユーザー->>UI: アプリ初回起動
+    UI->>DeviceMonitor: デバイス性能検査
+    DeviceMonitor-->>UI: 性能プロファイル
     UI->>Camera: カメラ権限確認
     Camera-->>UI: 権限ステータス
+    
+    alt 権限なし
+        UI-->>ユーザー: 権限リクエスト説明
+        ユーザー->>UI: 権限付与
+    end
+    
     UI->>UI: チュートリアル表示
     UI->>Camera: キャリブレーション開始
     Camera->>PoseDetector: テスト検出
     PoseDetector-->>UI: 検出品質フィードバック
-    UI-->>ユーザー: セットアップ完了
     
-    %% レッスン開始シーケンス - 簡素化
+    alt 検出品質低下
+        UI-->>ユーザー: 環境改善ガイド（光量など）
+        ユーザー->>UI: 環境調整
+        UI->>Camera: 再キャリブレーション
+    end
+    
+    UI-->>ユーザー: セットアップ完了
+    UI->>DeviceMonitor: バッテリーモニタリング開始
+    
+    %% レッスン開始シーケンス
     ユーザー->>UI: レッスン選択
     UI->>LocalDB: レッスンデータ取得
     LocalDB-->>UI: レッスンデータ返却
     UI->>UI: レッスン情報表示
     
-    %% エラーケースの追加
+    %% エラーケースの追加と強化
     UI->>Camera: カメラ起動
     alt カメラ起動成功
         Camera-->>UI: プレビュー表示
     else カメラエラー
         Camera--xUI: エラー通知
-        UI-->>ユーザー: エラーメッセージ表示
-        note right of UI: MVPでのエラーハンドリング
+        UI->>UI: エラー詳細診断
+        UI-->>ユーザー: エラーメッセージと解決方法表示
+        ユーザー->>UI: 再試行/設定変更
     end
     
-    %% ポーズ検出シーケンス - タイムアウト追加
+    %% デバイスモニタリング - 新規追加
+    loop バックグラウンドモニタリング
+        DeviceMonitor->>DeviceMonitor: リソース監視
+        alt バッテリー低下検知（20%以下）
+            DeviceMonitor-->>UI: バッテリー低下通知
+            UI->>PoseDetector: 低電力モード設定
+            UI-->>ユーザー: バッテリー警告表示
+        end
+        
+        alt パフォーマンス低下検知
+            DeviceMonitor-->>UI: パフォーマンス低下通知
+            UI->>PoseDetector: 検出品質調整
+            UI->>UI: フレームレート最適化
+        end
+    end
+    
+    %% ポーズ検出シーケンス - タイムアウトと再試行強化
     loop 姿勢検出（リアルタイム）
         Camera->>PoseDetector: フレーム送信
         alt 検出成功
@@ -46,17 +80,41 @@ sequenceDiagram
             UI->>UI: アライメントポイント色更新
             alt 大きな修正が必要
                 UI->>UI: 方向矢印を表示
+                opt アクセシビリティモード有効
+                    UI->>UI: 色覚異常対応表示に切替
+                    UI->>UI: オプションで音声フィードバック
+                end
             end
         else 検出失敗/タイムアウト
             PoseDetector--xUI: 検出失敗通知
-            UI-->>ユーザー: 位置調整提案（シルエットのみ維持）
+            UI->>UI: リトライカウンター増加
+            alt リトライ < 3回
+                UI->>PoseDetector: 検出パラメータ調整
+                UI-->>ユーザー: 「少々お待ちください」表示
+            else リトライ >= 3回
+                UI-->>ユーザー: 位置調整提案と詳細ガイド
+                UI->>UI: シルエットのみ維持
+                UI->>UI: トラブルシューティングオプション表示
+            end
         end
     end
     
-    %% セッション完了シーケンス - シンプル化
+    %% 通信エラーハンドリング - 新規追加
+    alt データ同期試行（フェーズ2）
+        UI->>API: データ送信
+        API--xUI: 通信エラー
+        UI->>LocalDB: エラーログ保存
+        UI->>UI: オフラインモードに自動切替
+        UI-->>ユーザー: オフライン通知
+    end
+    
+    %% セッション完了シーケンス
     ユーザー->>UI: ポーズ完了
+    UI->>DeviceMonitor: モニタリング停止
     UI->>LocalDB: セッション結果保存
+    LocalDB-->>UI: 保存確認
     UI->>UI: フィードバック表示
+    UI-->>ユーザー: セッション統計とアドバイス
     
     %% MVPフェーズ2で実装
     note over UI,API: 以下はMVPフェーズ2で実装
