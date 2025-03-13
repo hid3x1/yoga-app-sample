@@ -1,0 +1,84 @@
+flowchart TB
+    %% アクター
+    user((ユーザー))
+    member((会員))
+    admin((管理者))
+    
+    %% ユーザー管理関連
+    register[会員登録]
+    login[ログイン]
+    profile[プロフィール管理]
+    settings[設定変更]
+    
+    %% ポーズ・レッスン関連
+    viewLesson[レッスン閲覧]
+    startLesson[レッスン開始]
+    practiceYoga[ヨガ練習]
+    poseDetection[ポーズ検出・判定]
+    viewFeedback[フィードバック確認]
+    
+    %% 進捗・実績関連
+    viewStats[統計・進捗確認]
+    achievement[実績獲得]
+    
+    %% 管理機能
+    manageUsers[ユーザー管理]
+    manageLessons[レッスン管理]
+    managePoses[ポーズデータ管理]
+    
+    %% リレーションシップ
+    user --> register
+    user --> login
+    login --> member
+    
+    member --> profile
+    member --> settings
+    member --> viewLesson
+    member --> startLesson
+    startLesson --> practiceYoga
+    practiceYoga --> poseDetection
+    poseDetection --> viewFeedback
+    member --> viewStats
+    viewStats --> achievement
+    
+    admin --> manageUsers
+    admin --> manageLessons
+    admin --> managePoses
+    
+    %% グループ化
+    subgraph ユーザー管理
+        register
+        login
+        profile
+        settings
+    end
+    
+    subgraph ヨガ練習
+        viewLesson
+        startLesson
+        practiceYoga
+        poseDetection
+        viewFeedback
+    end
+    
+    subgraph 進捗管理
+        viewStats
+        achievement
+    end
+    
+    subgraph 管理機能
+        manageUsers
+        manageLessons
+        managePoses
+    end
+    
+    classDef default fill:#f9f9f9,stroke:#333,stroke-width:1px;
+    classDef userGroup fill:#e1f5fe,stroke:#0288d1,stroke-width:1px;
+    classDef yogaGroup fill:#e8f5e9,stroke:#388e3c,stroke-width:1px;
+    classDef statsGroup fill:#fff8e1,stroke:#ffa000,stroke-width:1px;
+    classDef adminGroup fill:#f3e5f5,stroke:#7b1fa2,stroke-width:1px;
+    
+    class ユーザー管理 userGroup;
+    class ヨガ練習 yogaGroup;
+    class 進捗管理 statsGroup;
+    class 管理機能 adminGroup;
