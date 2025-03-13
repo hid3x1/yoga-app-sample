@@ -2,47 +2,112 @@
 
 ## 開発プラットフォーム
 - **対象OS**: iOS / Android
-- **開発フレームワーク**: React Native または Flutter（選定理由を記載）
+- **開発フレームワーク**: React Native
+  - **選定理由**: 
+    1. MediaPipeの既存バインディングが豊富（特にTensorFlow Lite経由の対応）
+    2. JavaScript/TypeScriptによる開発リソースの確保が容易
+    3. JSエコシステムによる豊富なUIコンポーネント
+    4. ビジネス要件（MVPサイクルの高速化）に合致する開発速度
+  - **Flutter検討結果**: Dartの学習コストとMediaPipe統合の実績不足により今回は見送り
 - **最小サポートバージョン**: iOS 14以上、Android 9.0以上
+- **開発言語**: TypeScript（型安全性確保のため）
 
 ## フロントエンド技術
-- **UI Framework**: React Native Elements / Flutter Material Components
-- **状態管理**: Redux / Provider パターン
-- **ローカルストレージ**: AsyncStorage + SQLite / Hive + SQLite
-- **カメラ処理**: react-native-camera / camera パッケージ
+- **UI Framework**: React Native Paper + カスタムコンポーネント
+  - 理由: マテリアルデザインに準拠しつつカスタマイズの自由度が高い
+- **状態管理**: Redux Toolkit + React Query
+  - 理由: グローバル状態と非同期データフェッチの分離による保守性向上
+- **ローカルストレージ**: AsyncStorage + Realm
+  - 理由: SQLiteよりも高速で、オブジェクトマッピングが容易
+- **カメラ処理**: react-native-vision-camera
+  - 理由: 最新APIに対応し、フレーム処理のパフォーマンスが優れている
 
 ## ポーズ検出技術
 - **姿勢検出エンジン**: MediaPipe Pose（バージョン: 0.8.10以上）
-  - 代替選択肢: TensorFlow Lite / Fritz AI（必要に応じて）
+  - **実装方法**: TensorFlow Lite経由（react-native-tensorflow-lite）
+  - **代替選択肢**: Fritz AI（必要に応じて）
 - **検出パラメータ**:
   - 最小検出信頼度: 0.7
-  - モデル複雑度: 1（0-2の範囲、値が大きいほど精度が高いが処理が重い）
+  - モデル複雑度: デバイス性能に応じて動的変更（0-2の範囲）
+    - 高性能デバイス: 2（高精度）
+    - 中性能デバイス: 1（バランス）
+    - 低性能デバイス: 0（高速・低精度）
   - 検出タイムアウト: 500ms
+
+## パフォーマンス最適化戦略
+- **動的フレームレート調整**:
+  - 高性能モード: 30FPS
+  - バランスモード: 20FPS  
+  - 省電力モード: 10FPS
+- **バックグラウンド処理最適化**:
+  - Web Worker活用（JSスレッド負荷軽減）
+  - バックグラウンド時の検出一時停止
+- **メモリ管理**:
+  - 使用上限: 200MB
+  - インスタンス再利用パターン採用
+  - 明示的なメモリ解放（特に画像処理後）
+- **エラー検知と回復メカニズム**:
+  - パフォーマンスモニタリング（FPS、メモリ、CPU使用率）
+  - 異常検知時の自動再起動
 
 ## パフォーマンス要件
 - **フレームレート目標**: 最低15FPS（理想は30FPS）
+- **起動時間**: コールドスタート3秒以内、ウォームスタート1秒以内
 - **メモリ使用量上限**: 200MB
 - **バッテリー消費**: 1時間の連続使用で20%以下
+- **アプリサイズ**: 50MB以下（ベースモデルを含む）
 
 ## データモデル要件
-- **データ形式**: JSON / Protocol Buffers
-- **クラウド同期形式**: REST API / GraphQL（フェーズ2）
+- **データ形式**: 型付きJSON (TypeScript)
+- **スキーマ検証**: Zod/Yupによる実行時検証
+- **クラウド同期形式**: GraphQL（フェーズ2）
+  - ネットワーク効率とタイプセーフを重視
 
 ## セキュリティ要件
-- **ローカルデータ暗号化**: AES-256
+- **ローカルデータ暗号化**: AES-256（センシティブデータのみ）
 - **通信暗号化**: TLS 1.3（フェーズ2）
+- **認証**: JWT + リフレッシュトークン（フェーズ2）
+- **プライバシー保護**:
+  - カメラデータの一時利用のみ（永続保存なし）
+  - オプトイン方式によるデータ収集同意
 
 ## バックエンド技術（MVPフェーズ2向け）
-- **サーバー**: Node.js / Firebase
-- **データベース**: MongoDB / Firestore
-- **認証**: Firebase Authentication / Auth0
+- **サーバー**: Node.js + Express / NestJS
+  - 理由: TypeScriptによるフルスタック開発の統一性
+- **データベース**: MongoDB
+  - 理由: JSONデータの柔軟なスキーマと高速な開発
+- **認証**: Firebase Authentication
+  - 理由: マルチプラットフォーム対応と導入の容易さ
+- **インフラ**: サーバーレスアーキテクチャ（AWS Lambda / Vercel）
+  - 理由: スケーラビリティとコスト効率
 
-## テスト要件
-- **ユニットテスト**: Jest / XCTest / JUnit
-- **UI自動テスト**: Detox / Appium
-- **手動テスト項目リスト**: 別途提供
+## テスト戦略
+- **ユニットテスト**: Jest + React Native Testing Library
+  - 対象: コアロジック、ユーティリティ、Reduxリデューサー
+  - カバレッジ目標: 80%以上
+- **統合テスト**: Detox
+  - 対象: 主要ユーザーフロー、画面遷移
+- **パフォーマンステスト**:
+  - React Native Performance Monitor
+  - 自動化されたメモリリークテスト
+- **デバイステスト**:
+  - テストマトリクス: 主要端末10機種以上
+  - 異なる光条件でのカメラ検出テスト
+  - 低バッテリー状態のパフォーマンス検証
+- **ユーザビリティテスト**:
+  - 初心者ヨガユーザー5名以上
+  - 経験者ヨガユーザー3名以上
+  - アクセシビリティテスト（色覚異常模擬環境）
 
 ## CI/CD
-- **ビルド自動化**: GitHub Actions / Bitrise
-- **コード品質**: ESLint / Dart Analyzer
-- **テスト配布**: TestFlight / Firebase App Distribution
+- **ビルド自動化**: GitHub Actions
+- **コード品質**: ESLint + Prettier + TypeScript厳格モード
+- **静的解析**: SonarQube（セキュリティ脆弱性チェック）
+- **テスト配布**: Firebase App Distribution
+  - テスターグループ: 内部(10名)、外部(30名)
+
+## モニタリング（フェーズ2）
+- **エラー追跡**: Sentry
+- **アナリティクス**: Firebase Analytics
+- **クラッシュレポート**: Crashlytics
+- **パフォーマンスモニタリング**: Firebase Performance Monitoring
