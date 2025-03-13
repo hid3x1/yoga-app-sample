@@ -1,25 +1,20 @@
 classDiagram
-    %% ユーザー関連クラス
+    %% MVPフェーズ1 - 簡素化したクラス図
+    
+    %% ユーザー関連クラス（シンプル化）
     class User {
         -String id
         -String name
-        -String email
-        -String password
         -Date registrationDate
-        -UserSettings settings
-        +registerUser()
-        +login()
+        +createLocalUser()
         +updateProfile()
-        +resetPassword()
     }
     
     class UserSettings {
         -bool notificationsEnabled
         -String preferredLanguage
         -String difficultyLevel
-        -bool offlineMode
         +updateSettings()
-        +toggleNotifications()
     }
     
     class UserProgress {
@@ -27,84 +22,66 @@ classDiagram
         -int totalSessions
         -int totalMinutes
         -Map~String,Float~ poseScores
-        -List~Achievement~ achievements
         +addSession(Session)
-        +calculateStats()
-        +updatePoseScore(String pose, float score)
+        +calculateBasicStats()
     }
     
-    class Achievement {
-        -String id
-        -String name
-        -String description
-        -String iconUrl
-        -Date unlockedDate
-        -bool isUnlocked
-        +unlock()
-    }
-    
-    %% ポーズ関連クラス
+    %% ポーズ関連クラス（コア機能）
     class Pose {
         -String id
         -String name
         -String description
-        -String category
         -String difficulty
         -String imageUrl
-        -String videoUrl
         -List~KeyPoint~ keyPoints
         +getPoseGuideLines()
-        +getDifficultyLevel()
     }
     
     class KeyPoint {
         -String name
         -Vector3 position
-        -List~Connection~ connections
+        -List~String~ connectedTo
         +calculateAngle(KeyPoint p1, KeyPoint p2)
-    }
-    
-    class Connection {
-        -KeyPoint from
-        -KeyPoint to
-        +getConnectionLine()
     }
     
     class PoseLibrary {
         -Map~String,Pose~ poses
         +getPose(String id)
         +getAllPoses()
-        +getPosesByCategory(String category)
         +getPosesByDifficulty(String level)
-        +downloadPoseData()
+        +loadPoseData() // ローカルデータのみ
     }
     
-    %% ポーズ検出関連
+    %% ポーズ検出関連（コア機能）
     class PoseDetector {
         -MediaPipeModel model
         -int detectionConfidence
+        -int timeoutMs
         +initialize()
         +detectPose(Image frame)
         +getKeyPoints()
+        +handleDetectionFailure()
     }
     
     class PoseAnalyzer {
         -List~KeyPoint~ detectedKeyPoints
         -Pose referencePose
+        -float matchThreshold
         +compareWithReference()
         +calculatePoseScore()
-        +getImprovement()
+        +getBasicFeedback()
     }
     
     class PoseGuide {
         -Pose targetPose
         -List~KeyPoint~ userKeyPoints
-        +generateVisualGuide()
-        +highlightMisalignments()
-        +getInstructionText()
+        -GuideStyle guideStyle
+        +generateAlignmentOverlay()
+        +generateDirectionHints()
+        +updateAlignmentStatus()
     }
     
-    %% レッスン関連
+    %% レッスン関連（コア機能）
     class Lesson {
         -String id
         -String title
@@ -112,9 +89,7 @@ classDiagram
         -String difficulty
         -int durationMinutes
         -List~String~ poseIds
-        -String instructorId
         +getPoses()
-        +getTotalDuration()
     }
     
     class Session {
@@ -128,63 +103,52 @@ classDiagram
         +complete()
     }
     
-    class LessonLibrary {
-        -Map~String,Lesson~ lessons
-        +getLesson(String id)
-        +getAllLessons()
-        +getLessonsByDifficulty(String level)
-        +downloadLessonData()
-    }
-    
-    %% UI関連
+    %% UI関連（シンプル化）
     class CameraView {
         -Camera camera
         -PoseGuide guide
         -bool isFrontCamera
+        -bool showSkeleton // 常にfalse
+        -ErrorHandler errorHandler
         +initializeCamera()
         +startPreview()
         +stopPreview()
         +toggleCamera()
-        +captureFrame()
+        +handleCameraError()
+        +setGuideOpacity()
     }
     
     class UserInterface {
         -CameraView cameraView
         -PoseGuide guide
         -Session currentSession
-        +displayPoseGuide()
-        +updateFeedback()
-        +showProgress()
+        +displayVisualGuideOnly()
+        +updateAlignmentOverlay()
+        +showErrorMessage()
         +navigateToScreen()
     }
     
-    %% ストレージ関連
+    %% ストレージ関連（ローカルのみ）
     class LocalStorage {
         +saveUserData(User user)
         +loadUserData()
-        +cachePoseData(PoseLibrary library)
-        +getCachedPoseData()
+        +loadPoseData()
         +saveSessionResult(Session session)
+        +getLocalLessons()
     }
     
-    class RemoteStorage {
-        +syncUserData(User user)
-        +downloadPoseUpdates()
-        +uploadSessionStats(Session session)
-        +fetchAchievements()
-    }
+    %% MVPフェーズ2で追加予定のクラスコメント
+    note for RemoteStorage "MVPフェーズ2で実装"
+    note for Achievement "MVPフェーズ2で実装"
     
     %% リレーションシップ
     User "1" -- "1" UserSettings
     User "1" -- "1" UserProgress
-    UserProgress "1" -- "0..*" Achievement
     UserProgress "1" -- "0..*" Session
     
     Pose "1" -- "many" KeyPoint
-    KeyPoint "1" -- "0..*" Connection
     PoseLibrary "1" -- "0..*" Pose
     
-    LessonLibrary "1" -- "0..*" Lesson
     Lesson "1" -- "0..*" Pose
     Session "0..*" -- "1" Lesson
     
@@ -200,4 +164,3 @@ classDiagram
     LocalStorage "1" -- "1" User
     LocalStorage "1" -- "1" PoseLibrary
     LocalStorage "1" -- "0..*" Session
-    RemoteStorage "1" -- "1" LocalStorage
