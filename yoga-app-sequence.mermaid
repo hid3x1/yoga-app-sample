@@ -1,0 +1,45 @@
+sequenceDiagram
+    autonumber
+    actor ユーザー
+    participant UI as ユーザーインターフェース
+    participant Camera as カメラモジュール
+    participant PoseDetector as 姿勢検出エンジン
+    participant PoseAnalyzer as 姿勢分析エンジン
+    participant LocalDB as ローカルDB
+    participant API as バックエンドAPI
+    
+    %% レッスン開始シーケンス
+    ユーザー->>UI: レッスン選択
+    UI->>LocalDB: レッスンデータ取得
+    alt オンライン状態
+        LocalDB-->>UI: キャッシュデータ返却
+        UI->>API: 最新レッスンデータ確認
+        API-->>UI: 更新データ（あれば）
+    else オフライン状態
+        LocalDB-->>UI: キャッシュデータ返却
+    end
+    UI->>UI: レッスン情報表示
+    
+    %% ポーズ検出シーケンス
+    ユーザー->>UI: ポーズ練習開始
+    UI->>LocalDB: ターゲットポーズデータ取得
+    LocalDB-->>UI: ポーズデータ（キーポイント情報含む）
+    UI->>Camera: カメラ起動
+    Camera-->>UI: プレビュー表示
+    loop 姿勢検出（リアルタイム）
+        Camera->>PoseDetector: フレーム送信
+        PoseDetector->>PoseDetector: MediaPipe処理
+        PoseDetector-->>PoseAnalyzer: 検出キーポイント
+        PoseAnalyzer->>PoseAnalyzer: リファレンスと比較
+        PoseAnalyzer-->>UI: スコア・フィードバック
+        UI->>UI: ガイドライン表示更新
+    end
+    
+    %% セッション完了シーケンス
+    ユーザー->>UI: ポーズ完了
+    UI->>LocalDB: セッション結果保存
+    UI->>UI: フィードバック表示
+    alt オンライン状態
+        UI->>API: セッション結果送信
+        API-->>UI: 統計・実績更新
+    end
