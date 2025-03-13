@@ -1,0 +1,203 @@
+classDiagram
+    %% ユーザー関連クラス
+    class User {
+        -String id
+        -String name
+        -String email
+        -String password
+        -Date registrationDate
+        -UserSettings settings
+        +registerUser()
+        +login()
+        +updateProfile()
+        +resetPassword()
+    }
+    
+    class UserSettings {
+        -bool notificationsEnabled
+        -String preferredLanguage
+        -String difficultyLevel
+        -bool offlineMode
+        +updateSettings()
+        +toggleNotifications()
+    }
+    
+    class UserProgress {
+        -String userId
+        -int totalSessions
+        -int totalMinutes
+        -Map~String,Float~ poseScores
+        -List~Achievement~ achievements
+        +addSession(Session)
+        +calculateStats()
+        +updatePoseScore(String pose, float score)
+    }
+    
+    class Achievement {
+        -String id
+        -String name
+        -String description
+        -String iconUrl
+        -Date unlockedDate
+        -bool isUnlocked
+        +unlock()
+    }
+    
+    %% ポーズ関連クラス
+    class Pose {
+        -String id
+        -String name
+        -String description
+        -String category
+        -String difficulty
+        -String imageUrl
+        -String videoUrl
+        -List~KeyPoint~ keyPoints
+        +getPoseGuideLines()
+        +getDifficultyLevel()
+    }
+    
+    class KeyPoint {
+        -String name
+        -Vector3 position
+        -List~Connection~ connections
+        +calculateAngle(KeyPoint p1, KeyPoint p2)
+    }
+    
+    class Connection {
+        -KeyPoint from
+        -KeyPoint to
+        +getConnectionLine()
+    }
+    
+    class PoseLibrary {
+        -Map~String,Pose~ poses
+        +getPose(String id)
+        +getAllPoses()
+        +getPosesByCategory(String category)
+        +getPosesByDifficulty(String level)
+        +downloadPoseData()
+    }
+    
+    %% ポーズ検出関連
+    class PoseDetector {
+        -MediaPipeModel model
+        -int detectionConfidence
+        +initialize()
+        +detectPose(Image frame)
+        +getKeyPoints()
+    }
+    
+    class PoseAnalyzer {
+        -List~KeyPoint~ detectedKeyPoints
+        -Pose referencePose
+        +compareWithReference()
+        +calculatePoseScore()
+        +getImprovement()
+    }
+    
+    class PoseGuide {
+        -Pose targetPose
+        -List~KeyPoint~ userKeyPoints
+        +generateVisualGuide()
+        +highlightMisalignments()
+        +getInstructionText()
+    }
+    
+    %% レッスン関連
+    class Lesson {
+        -String id
+        -String title
+        -String description
+        -String difficulty
+        -int durationMinutes
+        -List~String~ poseIds
+        -String instructorId
+        +getPoses()
+        +getTotalDuration()
+    }
+    
+    class Session {
+        -String id
+        -String userId
+        -String lessonId
+        -Date date
+        -int durationMinutes
+        -Map~String,Float~ poseScores
+        +calculateAverageScore()
+        +complete()
+    }
+    
+    class LessonLibrary {
+        -Map~String,Lesson~ lessons
+        +getLesson(String id)
+        +getAllLessons()
+        +getLessonsByDifficulty(String level)
+        +downloadLessonData()
+    }
+    
+    %% UI関連
+    class CameraView {
+        -Camera camera
+        -PoseGuide guide
+        -bool isFrontCamera
+        +initializeCamera()
+        +startPreview()
+        +stopPreview()
+        +toggleCamera()
+        +captureFrame()
+    }
+    
+    class UserInterface {
+        -CameraView cameraView
+        -PoseGuide guide
+        -Session currentSession
+        +displayPoseGuide()
+        +updateFeedback()
+        +showProgress()
+        +navigateToScreen()
+    }
+    
+    %% ストレージ関連
+    class LocalStorage {
+        +saveUserData(User user)
+        +loadUserData()
+        +cachePoseData(PoseLibrary library)
+        +getCachedPoseData()
+        +saveSessionResult(Session session)
+    }
+    
+    class RemoteStorage {
+        +syncUserData(User user)
+        +downloadPoseUpdates()
+        +uploadSessionStats(Session session)
+        +fetchAchievements()
+    }
+    
+    %% リレーションシップ
+    User "1" -- "1" UserSettings
+    User "1" -- "1" UserProgress
+    UserProgress "1" -- "0..*" Achievement
+    UserProgress "1" -- "0..*" Session
+    
+    Pose "1" -- "many" KeyPoint
+    KeyPoint "1" -- "0..*" Connection
+    PoseLibrary "1" -- "0..*" Pose
+    
+    LessonLibrary "1" -- "0..*" Lesson
+    Lesson "1" -- "0..*" Pose
+    Session "0..*" -- "1" Lesson
+    
+    PoseDetector "1" -- "0..*" KeyPoint
+    PoseAnalyzer "1" -- "1" PoseDetector
+    PoseAnalyzer "1" -- "1" Pose
+    PoseGuide "1" -- "1" PoseAnalyzer
+    
+    CameraView "1" -- "1" PoseGuide
+    UserInterface "1" -- "1" CameraView
+    UserInterface "1" -- "1" Session
+    
+    LocalStorage "1" -- "1" User
+    LocalStorage "1" -- "1" PoseLibrary
+    LocalStorage "1" -- "0..*" Session
+    RemoteStorage "1" -- "1" LocalStorage
