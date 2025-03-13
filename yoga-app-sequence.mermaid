@@ -8,38 +8,59 @@ sequenceDiagram
     participant LocalDB as ローカルDB
     participant API as バックエンドAPI
     
-    %% レッスン開始シーケンス
+    %% MVPフェーズ1 - 初回起動・キャリブレーション（追加）
+    ユーザー->>UI: アプリ初回起動
+    UI->>Camera: カメラ権限確認
+    Camera-->>UI: 権限ステータス
+    UI->>UI: チュートリアル表示
+    UI->>Camera: キャリブレーション開始
+    Camera->>PoseDetector: テスト検出
+    PoseDetector-->>UI: 検出品質フィードバック
+    UI-->>ユーザー: セットアップ完了
+    
+    %% レッスン開始シーケンス - 簡素化
     ユーザー->>UI: レッスン選択
     UI->>LocalDB: レッスンデータ取得
-    alt オンライン状態
-        LocalDB-->>UI: キャッシュデータ返却
-        UI->>API: 最新レッスンデータ確認
-        API-->>UI: 更新データ（あれば）
-    else オフライン状態
-        LocalDB-->>UI: キャッシュデータ返却
-    end
+    LocalDB-->>UI: レッスンデータ返却
     UI->>UI: レッスン情報表示
     
-    %% ポーズ検出シーケンス
-    ユーザー->>UI: ポーズ練習開始
-    UI->>LocalDB: ターゲットポーズデータ取得
-    LocalDB-->>UI: ポーズデータ（キーポイント情報含む）
+    %% エラーケースの追加
     UI->>Camera: カメラ起動
-    Camera-->>UI: プレビュー表示
-    loop 姿勢検出（リアルタイム）
-        Camera->>PoseDetector: フレーム送信
-        PoseDetector->>PoseDetector: MediaPipe処理
-        PoseDetector-->>PoseAnalyzer: 検出キーポイント
-        PoseAnalyzer->>PoseAnalyzer: リファレンスと比較
-        PoseAnalyzer-->>UI: スコア・フィードバック
-        UI->>UI: ガイドライン表示更新
+    alt カメラ起動成功
+        Camera-->>UI: プレビュー表示
+    else カメラエラー
+        Camera--xUI: エラー通知
+        UI-->>ユーザー: エラーメッセージ表示
+        note right of UI: MVPでのエラーハンドリング
     end
     
-    %% セッション完了シーケンス
+    %% ポーズ検出シーケンス - タイムアウト追加
+    loop 姿勢検出（リアルタイム）
+        Camera->>PoseDetector: フレーム送信
+        alt 検出成功
+            PoseDetector->>PoseDetector: MediaPipe処理（バックグラウンド）
+            PoseDetector-->>PoseAnalyzer: 検出キーポイント
+            PoseAnalyzer->>PoseAnalyzer: リファレンスと比較
+            PoseAnalyzer-->>UI: アライメント状態
+            UI->>UI: 視覚的ガイドのみ更新（骨格表示なし）
+            UI->>UI: アライメントポイント色更新
+            alt 大きな修正が必要
+                UI->>UI: 方向矢印を表示
+            end
+        else 検出失敗/タイムアウト
+            PoseDetector--xUI: 検出失敗通知
+            UI-->>ユーザー: 位置調整提案（シルエットのみ維持）
+        end
+    end
+    
+    %% セッション完了シーケンス - シンプル化
     ユーザー->>UI: ポーズ完了
     UI->>LocalDB: セッション結果保存
     UI->>UI: フィードバック表示
-    alt オンライン状態
+    
+    %% MVPフェーズ2で実装
+    note over UI,API: 以下はMVPフェーズ2で実装
+    alt オンライン状態（フェーズ2）
         UI->>API: セッション結果送信
         API-->>UI: 統計・実績更新
     end
