@@ -6,7 +6,9 @@ flowchart TB
         PoseD[姿勢検出エンジン\nMediaPipe/BlazePose]
         PoseA[姿勢分析エンジン]
         LocalDB[(ローカルDB)]
-        AuthM[認証モジュール]
+        
+        %% MVPフェーズでは認証は簡素化
+        AuthM[認証モジュール\n- MVPフェーズ2]
         
         UI --> CameraM
         CameraM --> PoseD
@@ -14,16 +16,22 @@ flowchart TB
         PoseA --> UI
         UI <--> LocalDB
         UI <--> AuthM
+        
+        %% 依存関係をより明確に
+        PoseD -.-> |依存| PoseA
     end
     
     subgraph サーバー側
         direction TB
-        API[API サービス]
-        AuthS[認証サービス]
-        UserDB[(ユーザーDB)]
-        PoseDB[(ポーズDB)]
-        LessonDB[(レッスンDB)]
-        Analytics[分析サービス]
+        %% MVPフェーズ1ではAPIのみ
+        API[API サービス\n- MVPフェーズ1]
+        AuthS[認証サービス\n- MVPフェーズ2]
+        UserDB[(ユーザーDB\n- MVPフェーズ2)]
+        PoseDB[(ポーズDB\n- MVPフェーズ1)]
+        LessonDB[(レッスンDB\n- MVPフェーズ1)]
+        
+        %% 将来的な機能
+        Analytics[分析サービス\n- 将来実装]
         
         API --> AuthS
         API <--> UserDB
@@ -32,17 +40,20 @@ flowchart TB
         API <--> Analytics
     end
     
-    %% クライアントとサーバーの接続
-    AuthM <--> AuthS
-    UI <--> API
+    %% MVPフェーズ1では最初にローカルモードのみ実装
+    LocalDB --> |MVPフェーズ1| UI
     
-    %% オフライン動作モード
-    LocalDB -.-> |オフラインモード| UI
+    %% MVPフェーズ2でオンライン連携
+    AuthM <--> |MVPフェーズ2| AuthS
+    UI <--> |MVPフェーズ2| API
     
-    %% データフロー
+    %% 明確なデータフロー
     CameraM --> |ビデオフレーム| PoseD
     PoseD --> |キーポイント| PoseA
     PoseA --> |スコア/フィードバック| UI
     
-    %% バックエンドとの同期
-    LocalDB <-.-> |同期| API
+    %% バックエンドとの同期（フェーズ2）
+    LocalDB <-.-> |同期 - MVPフェーズ2| API
+    
+    %% エラーハンドリングの追加
+    PoseD -.-> |検出エラー処理| UI
