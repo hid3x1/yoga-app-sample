@@ -1,0 +1,108 @@
+{
+  "version": "1.0.0",
+  "poses": [
+    {
+      "id": "pose_001",
+      "name": "山のポーズ（タダーサナ）",
+      "description": "姿勢を調整し、安定した立ち方を身につけるための基本ポーズです。",
+      "difficulty": "初級",
+      "category": "立位",
+      "imageUrl": "assets/images/poses/mountain_pose.jpg",
+      "silhouetteUrl": "assets/images/guides/mountain_pose_silhouette.png",
+      "keyPoints": [
+        {
+          "name": "NOSE",
+          "targetPosition": [0, 0, 0],
+          "isGuidancePoint": false
+        },
+        {
+          "name": "LEFT_SHOULDER",
+          "targetPosition": [-0.2, 0.3, 0],
+          "isGuidancePoint": true
+        },
+        // ... 他のキーポイント
+      ],
+      "guidancePoints": [
+        {
+          "name": "左肩",
+          "keypoint": "LEFT_SHOULDER",
+          "importance": "high",
+          "visualSize": 15
+        },
+        {
+          "name": "右肩",
+          "keypoint": "RIGHT_SHOULDER",
+          "importance": "high",
+          "visualSize": 15
+        },
+        {
+          "name": "左手首",
+          "keypoint": "LEFT_WRIST",
+          "importance": "medium",
+          "visualSize": 12
+        }
+        // ... 他のガイダンスポイント
+      ],
+      "alignmentRules": [
+        {
+          "description": "両足を揃える",
+          "keypoints": ["LEFT_HEEL", "RIGHT_HEEL"],
+          "expectedDistance": 0.1,
+          "tolerance": 0.05,
+          "showDirectionHint": true
+        },
+        {
+          "description": "腕を体側に伸ばす",
+          "angles": [
+            {
+              "joints": ["LEFT_SHOULDER", "LEFT_ELBOW", "LEFT_WRIST"],
+              "expectedAngle": 180,
+              "tolerance": 10,
+              "showDirectionHint": true
+            },
+            {
+              "joints": ["RIGHT_SHOULDER", "RIGHT_ELBOW", "RIGHT_WRIST"],
+              "expectedAngle": 180,
+              "tolerance": 10,
+              "showDirectionHint": true
+            }
+          ]
+        }
+        // ... 他のルール
+      ]
+    },
+    {
+      "id": "pose_002",
+      "name": "木のポーズ（ヴリクシャーサナ）",
+      "description": "バランス感覚を向上させるための片足立ちのポーズです。",
+      "difficulty": "初級",
+      "category": "バランス",
+      "imageUrl": "assets/images/poses/tree_pose.jpg",
+      // ... 他のデータ
+    }
+    // ... 他のポーズ
+  ],
+  "lessons": [
+    {
+      "id": "lesson_001",
+      "title": "初心者向けフロー",
+      "description": "ヨガの基本的なポーズを組み合わせた、初心者向けの簡単なフローです。",
+      "difficulty": "初級",
+      "durationMinutes": 20,
+      "poseSequence": [
+        {
+          "poseId": "pose_001",
+          "durationSeconds": 60,
+          "instructions": "両足を揃え、背筋を伸ばして立ちます。"
+        },
+        {
+          "poseId": "pose_002",
+          "durationSeconds": 45,
+          "instructions": "左足に体重をかけ、右足を左足の内側に置きます。"
+        },
+        // ... 他のポーズシーケンス
+      ]
+    },
+    // ... 他のレッスン
+  ]
+}
