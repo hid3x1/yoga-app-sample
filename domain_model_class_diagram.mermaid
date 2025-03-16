@@ -1,0 +1,100 @@
+classDiagram
+    %% クラス定義
+    class YogaPose {
+        -String id
+        -String name
+        -List~KeyPoint~ keyPoints
+        -List~PositionRequirement~ requirements
+        +evaluate(Skeleton skeleton) Result
+        +getAngle(List~Point~ points) Float
+        +getDifficulty() Level
+    }
+    
+    class Lesson {
+        -String id
+        -String name
+        -String description
+        -List~PoseSequence~ poses
+        -int duration
+        +getCurrentPose() YogaPose
+        +progressTo(int position) void
+        +calculateCompletion() Float
+        +getDuration() Int
+    }
+    
+    class User {
+        -String id
+        -String name
+        -String email
+        -UserProfile profile
+        +getHistory() List~Session~
+        +addSession(Session session) void
+        +updateProfile(UserProfile profile) void
+        +getStatistics() UserStatistics
+    }
+    
+    class UserProgress {
+        -String userId
+        -Map completedLessons
+        -int streak
+        -List~Achievement~ achievements
+        +getLessonStatus(String lessonId) Status
+        +updateStreak() void
+        +calculateStats() Statistics
+        +getAchievements() List~Achievement~
+    }
+    
+    class Session {
+        -String id
+        -DateTime date
+        -String lessonId
+        -List~PoseResult~ results
+        -int duration
+        +getPerformance() Float
+        +getDuration() Int
+        +getSummary() SessionSummary
+        +getCaloriesBurned() Int
+    }
+    
+    class Coupon {
+        -String id
+        -String code
+        -String description
+        -DateTime validFrom
+        -DateTime validUntil
+        -DiscountType type
+        -float value
+        +isValid() Boolean
+        +apply(Subscription subscription) void
+        +getDiscount() Float
+        +getDaysUntilExpiration() Int
+    }
+    
+    class PoseResult {
+        -String poseId
+        -Float accuracy
+        -Int duration
+        -List~FeedbackItem~ feedbackItems
+        +getOverallScore() Float
+        +hasPassed() Boolean
+    }
+    
+    class Achievement {
+        -String id
+        -String title
+        -String description
+        -AchievementType type
+        -DateTime unlockedAt
+        +isUnlocked() Boolean
+        +unlock() void
+    }
+    
+    %% 関連性
+    Lesson "1" *-- "many" YogaPose : contains
+    User "1" *-- "1" UserProgress : has
+    UserProgress "1" *-- "many" Session : records
+    Session "many" o-- "1" Lesson : completes
+    User "1" *-- "many" Coupon : owns
+    Session "1" *-- "many" PoseResult : contains
+    UserProgress "1" *-- "many" Achievement : unlocks
+    PoseResult "many" --> "1" YogaPose : evaluates
