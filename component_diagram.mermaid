@@ -1,0 +1,100 @@
+classDiagram
+    %% レイヤー定義
+    namespace PresentationLayer {
+        class View {
+            +render()
+            +handleUserInput()
+        }
+        class ViewModel {
+            +state
+            +updateState()
+            +executeCommand()
+        }
+        class Navigation {
+            +navigate()
+            +getCurrentScreen()
+        }
+        class UIComponents {
+            +render()
+            +getState()
+        }
+    }
+    
+    namespace DomainLayer {
+        class UseCases {
+            +execute()
+            +getResult()
+        }
+        class Entities {
+            +getProperties()
+            +validate()
+        }
+        class RepositoryInterfaces {
+            +fetch()
+            +save()
+            +delete()
+        }
+        class DomainServices {
+            +processDomainLogic()
+            +validateBusinessRules()
+        }
+    }
+    
+    namespace DataLayer {
+        class RepositoryImpl {
+            +fetch()
+            +save()
+            +delete()
+        }
+        class LocalDataSource {
+            +queryData()
+            +saveData()
+        }
+        class RemoteDataSource {
+            +fetchFromAPI()
+            +pushToAPI()
+        }
+        class DataMappers {
+            +toEntity()
+            +fromEntity()
+        }
+    }
+    
+    namespace RealtimeLayer {
+        class CameraManager {
+            +setupCamera()
+            +captureFrame()
+            +releaseResources()
+        }
+        class MediaPipeBridge {
+            +initializeMediaPipe()
+            +processSkeleton()
+            +getRawSkeleton()
+        }
+        class PoseDetector {
+            +detectPose()
+            +trackJoints()
+            +getBodyPoints()
+        }
+        class PoseEvaluator {
+            +evaluatePoseAccuracy()
+            +calculateAngles()
+            +generateFeedback()
+        }
+    }
+    
+    %% レイヤー間の関係
+    View --> ViewModel : observes
+    ViewModel --> UseCases : executes
+    UseCases --> RepositoryInterfaces : uses
+    UseCases --> Entities : manipulates
+    RepositoryInterfaces <|.. RepositoryImpl : implements
+    RepositoryImpl --> LocalDataSource : uses
+    RepositoryImpl --> RemoteDataSource : uses
+    RepositoryImpl --> DataMappers : uses
+    ViewModel --> CameraManager : controls
+    PoseDetector --> UseCases : provides data to
+    MediaPipeBridge --> PoseDetector : feeds
+    CameraManager --> MediaPipeBridge : sends frames to
+    PoseDetector --> PoseEvaluator : sends skeleton to
+    PoseEvaluator --> DomainServices : uses
