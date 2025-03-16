@@ -1,0 +1,49 @@
+stateDiagram-v2
+    [*] --> LessonSelection : アプリ起動
+    
+    LessonSelection --> LessonPreparation : レッスン選択
+    LessonPreparation --> LessonStart : 準備完了
+    LessonStart --> CameraSetup : レッスン開始
+    
+    CameraSetup --> PoseDetection : カメラ起動完了
+    
+    PoseDetection --> PoseEvaluation : 骨格データ取得
+    PoseEvaluation --> PoseDetection : 次のフレーム
+    
+    PoseEvaluation --> PoseFeedback : 評価結果
+    PoseFeedback --> PoseEvaluation : 継続評価
+    
+    PoseFeedback --> NextPose : ポーズ完了
+    NextPose --> PoseDetection : 次のポーズ
+    
+    NextPose --> LessonComplete : 全ポーズ完了
+    LessonComplete --> SessionSummary : 結果集計
+    
+    SessionSummary --> AchievementUnlock : 達成確認
+    SessionSummary --> CouponOffer : 特典確認
+    AchievementUnlock --> HomeScreen : 通知表示
+    CouponOffer --> HomeScreen : クーポン表示
+    
+    HomeScreen --> LessonSelection : 新レッスン選択
+    HomeScreen --> [*] : アプリ終了
+    
+    state PoseDetection {
+        [*] --> FrameCapture
+        FrameCapture --> MediaPipeProcess
+        MediaPipeProcess --> SkeletonMapping
+        SkeletonMapping --> [*]
+    }
+    
+    state PoseEvaluation {
+        [*] --> AngleCalculation
+        AngleCalculation --> PositionVerification
+        PositionVerification --> AccuracyScoring
+        AccuracyScoring --> [*]
+    }
+    
+    state CouponOffer {
+        [*] --> EligibilityCheck
+        EligibilityCheck --> CouponGeneration : 条件達成
+        EligibilityCheck --> [*] : 条件未達成
+        CouponGeneration --> [*]
+    }
