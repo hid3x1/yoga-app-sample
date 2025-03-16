@@ -1,0 +1,66 @@
+graph TD
+    %% アーキテクチャレイヤー
+    subgraph "アーキテクチャ"
+        PL[プレゼンテーション層]
+        DL[ドメイン層]
+        DAL[データアクセス層]
+        RTL[リアルタイム処理層]
+    end
+    
+    %% iOS技術スタック
+    subgraph "iOS実装"
+        IOS_UI[SwiftUI]
+        IOS_STATE[Combine]
+        IOS_STORAGE[Core Data/Realm]
+        IOS_CAMERA[AVFoundation]
+        IOS_ML[CoreML/MediaPipe]
+        IOS_NET[URLSession/Alamofire]
+        IOS_TEST[XCTest]
+        IOS_DI[Swinject/DIサポート]
+    end
+    
+    %% Android技術スタック
+    subgraph "Android実装"
+        AND_UI[Jetpack Compose]
+        AND_STATE[Flow/Coroutines]
+        AND_STORAGE[Room/Realm]
+        AND_CAMERA[CameraX]
+        AND_ML[TensorFlow Lite/MediaPipe]
+        AND_NET[Retrofit/OkHttp]
+        AND_TEST[JUnit/Espresso]
+        AND_DI[Hilt/Koin]
+    end
+    
+    %% 共通コンポーネント
+    subgraph "共通コンポーネント"
+        COMMON_AUTH[Firebase Auth]
+        COMMON_STORAGE[Firebase Firestore]
+        COMMON_CLOUD[Firebase Cloud Functions]
+        COMMON_MEDIA[Cloud Storage]
+        COMMON_ANALYTICS[Firebase Analytics]
+        COMMON_NOTIFICATIONS[Push Notifications]
+    end
+    
+    %% アーキテクチャと技術の関連
+    PL --> IOS_UI & AND_UI
+    PL --> IOS_STATE & AND_STATE
+    DL --> IOS_TEST & AND_TEST
+    DL --> IOS_DI & AND_DI
+    DAL --> IOS_STORAGE & AND_STORAGE
+    DAL --> IOS_NET & AND_NET
+    DAL --> COMMON_AUTH & COMMON_STORAGE & COMMON_CLOUD
+    RTL --> IOS_CAMERA & AND_CAMERA
+    RTL --> IOS_ML & AND_ML
+    
+    %% クロスカッティングコンサーン
+    COMMON_ANALYTICS -.-> PL & DAL
+    COMMON_NOTIFICATIONS -.-> PL
+    COMMON_MEDIA -.-> DAL
+    
+    %% フロー説明
+    PL -->|"UI Events"| DL
+    DL -->|"Data Request"| DAL
+    DL -->|"Pose Analysis Request"| RTL
+    RTL -->|"Skeleton Data"| DL
+    DAL -->|"Domain Models"| DL
+    DL -->|"View Models"| PL
